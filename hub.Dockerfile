@@ -29,7 +29,8 @@ COPY backend/go.mod backend/go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     go mod download && \
-    go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11 && \
+    go install github.com/AikidoSec/firewall-go/cmd/zen-go@latest
 
 COPY --from=buf /usr/local/bin/buf /usr/local/bin/buf
 COPY backend/ .
@@ -37,7 +38,7 @@ RUN buf generate
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=1 go build \
+    CGO_ENABLED=1 go build -toolexec="zen-go toolexec" \
     -ldflags "-s -w \
     -X github.com/OrcaCD/orca-cd/internal/version.Version=${VERSION} \
     -X github.com/OrcaCD/orca-cd/internal/version.Commit=${COMMIT} \

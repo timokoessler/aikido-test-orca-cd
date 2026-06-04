@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AikidoSec/firewall-go/zen"
 	"github.com/OrcaCD/orca-cd/internal/hub/applications"
 	"github.com/OrcaCD/orca-cd/internal/hub/auth"
 	"github.com/OrcaCD/orca-cd/internal/hub/crypto"
@@ -90,6 +91,10 @@ func DefaultConfig() (Config, error) {
 var Log = logger.New("hub", false)
 
 func Run(cfg Config) error {
+	if err := zen.Protect(); err != nil {
+		panic(err)
+	}
+
 	gin.SetMode(gin.ReleaseMode)
 	Log = logger.New("hub", cfg.LogJSON).Level(cfg.LogLevel)
 
@@ -154,6 +159,7 @@ func Run(cfg Config) error {
 		Log.Warn().Msg("no trusted proxies configured; in production the server should always run behind a reverse proxy")
 	}
 	router.Use(middleware.SecurityHeaders())
+	router.Use(middleware.AikidoZen())
 	router.Use(middleware.ValidateOrigin(cfg.AppURL))
 	router.Use(middleware.TimeoutMiddleware(30 * time.Second))
 
