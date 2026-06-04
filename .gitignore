@@ -19,7 +19,7 @@ backend/coverage.txt
 *.exe
 
 # Proto generated files
-*.pb.go
+#*.pb.go
 
 # Playwright
 e2e/playwright-report
