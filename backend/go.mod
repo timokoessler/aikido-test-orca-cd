@@ -4,6 +4,8 @@ go 1.26.1
 
 require (
 	charm.land/lipgloss/v2 v2.0.3
+	github.com/AikidoSec/firewall-go v1.2.4
+	github.com/AikidoSec/firewall-go/instrumentation/sources/gin-gonic/gin v1.2.4
 	github.com/aegis-aead/go-libaegis v0.2.14
 	github.com/alexedwards/argon2id v1.0.1-0.20251028180742-493d7dead70e
 	github.com/coreos/go-oidc/v3 v3.18.0
@@ -36,11 +38,15 @@ require (
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/eclipse/paho.golang v0.23.0 // indirect
+	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/in-toto/attestation v1.1.2 // indirect
+	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
+	github.com/tetratelabs/wazero v1.11.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
+	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	gotest.tools/v3 v3.5.2 // indirect
 )
 
@@ -51,8 +57,8 @@ require (
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/buger/goterm v1.0.4 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
-	github.com/bytedance/sonic v1.15.0 // indirect
-	github.com/bytedance/sonic/loader v0.5.0 // indirect
+	github.com/bytedance/sonic v1.15.1 // indirect
+	github.com/bytedance/sonic/loader v0.5.1 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/compose-spec/compose-go/v2 v2.11.0
