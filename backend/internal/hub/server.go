@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AikidoSec/firewall-go/zen"
 	"github.com/OrcaCD/orca-cd/internal/hub/applications"
 	"github.com/OrcaCD/orca-cd/internal/hub/auth"
 	"github.com/OrcaCD/orca-cd/internal/hub/crypto"
@@ -156,6 +157,7 @@ func Run(cfg Config) error {
 	router.Use(middleware.SecurityHeaders())
 	router.Use(middleware.ValidateOrigin(cfg.AppURL))
 	router.Use(middleware.TimeoutMiddleware(30 * time.Second))
+	router.Use(AikidoZenMiddleware())
 
 	err = RegisterRoutes(router, cfg)
 	if err != nil {
@@ -205,4 +207,28 @@ func Run(cfg Config) error {
 
 	Log.Info().Msg("hub stopped")
 	return nil
+}
+
+func AikidoZenMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		blockResult := zen.ShouldBlockRequest(c)
+
+		if blockResult != nil {
+			if blockResult.Type == "rate-limited" {
+				message := "You are rate limited by Zen."
+				if blockResult.Trigger == "ip" {
+					message += " (Your IP: " + *blockResult.IP + ")"
+				}
+				c.String(http.StatusTooManyRequests, message)
+				c.Abort()
+				return
+			} else if blockResult.Type == "blocked" {
+				c.String(http.StatusForbidden, "You are blocked by Zen.")
+				c.Abort()
+				return
+			}
+		}
+
+		c.Next()
+	}
 }
