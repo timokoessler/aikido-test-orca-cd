@@ -37,7 +37,7 @@ RUN buf generate
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=1 go build \
+    CGO_ENABLED=1 go tool zen-go go build \
     -ldflags "-s -w \
     -X github.com/OrcaCD/orca-cd/internal/version.Version=${VERSION} \
     -X github.com/OrcaCD/orca-cd/internal/version.Commit=${COMMIT} \
