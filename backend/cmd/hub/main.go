@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/AikidoSec/firewall-go/zen"
 	"github.com/OrcaCD/orca-cd/internal/hub"
 	"github.com/OrcaCD/orca-cd/internal/shared/httpclient"
 	"github.com/OrcaCD/orca-cd/internal/version"
@@ -13,6 +14,10 @@ import (
 )
 
 func main() {
+	if err := zen.Protect(); err != nil {
+		panic(err)
+	}
+
 	rootCmd := &cobra.Command{
 		Use:                "hub [flags]",
 		Short:              "Orca Hub",
