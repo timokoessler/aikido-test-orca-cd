@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AikidoSec/firewall-go/zen"
 	"github.com/OrcaCD/orca-cd/internal/hub/applicationevents"
 	"github.com/OrcaCD/orca-cd/internal/hub/applications"
 	"github.com/OrcaCD/orca-cd/internal/hub/auth"
@@ -148,6 +149,7 @@ func Run(cfg Config) error {
 
 	router := gin.New()
 
+	router.Use(AikidoMiddleware())
 	router.Use(middleware.RequestLogger(Log))
 
 	if cfg.Demo {
@@ -246,5 +248,30 @@ func recoverInterruptedState(ctx context.Context, log *zerolog.Logger) {
 		log.Warn().Err(err).Msg("failed to recover interrupted application events")
 	} else if recovered > 0 {
 		log.Info().Int64("count", recovered).Msg("marked interrupted application events as failed")
+	}
+}
+
+func AikidoMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		blockResult := zen.ShouldBlockRequest(c)
+
+		if blockResult != nil {
+			if blockResult.Type == "rate-limited" {
+				message := "You are rate limited by Zen."
+				if blockResult.Trigger == "ip" {
+					message += " (Your IP: " + *blockResult.IP + ")"
+				}
+				c.Header("Retry-After", strconv.Itoa(blockResult.RetryAfterSeconds))
+				c.String(http.StatusTooManyRequests, message)
+				c.Abort()
+				return
+			} else if blockResult.Type == "blocked" {
+				c.String(http.StatusForbidden, "You are blocked by Zen.")
+				c.Abort()
+				return
+			}
+		}
+
+		c.Next()
 	}
 }

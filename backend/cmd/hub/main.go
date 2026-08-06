@@ -7,6 +7,7 @@ import (
 	"os"
 	"slices"
 
+	"github.com/AikidoSec/firewall-go/zen"
 	"github.com/OrcaCD/orca-cd/internal/hub"
 	"github.com/OrcaCD/orca-cd/internal/shared/httpclient"
 	"github.com/OrcaCD/orca-cd/internal/version"
@@ -14,6 +15,11 @@ import (
 )
 
 func main() {
+	err := zen.Protect()
+	if err != nil {
+		panic(err)
+	}
+
 	rootCmd := newRootCmd()
 
 	if err := rootCmd.Execute(); err != nil {
