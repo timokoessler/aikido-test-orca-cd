@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AikidoSec/firewall-go/zen"
 	"github.com/OrcaCD/orca-cd/internal/hub/applicationevents"
 	"github.com/OrcaCD/orca-cd/internal/hub/applications"
 	"github.com/OrcaCD/orca-cd/internal/hub/auth"
@@ -148,6 +149,7 @@ func Run(cfg Config) error {
 
 	router := gin.New()
 
+	router.Use(AikidoMiddleware())
 	router.Use(middleware.RequestLogger(Log))
 
 	if cfg.Demo {
@@ -209,6 +211,8 @@ func Run(cfg Config) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	zen.Shutdown(ctx)
+
 	if err := srv.Shutdown(ctx); err != nil {
 		Log.Error().Err(err).Msg("forced shutdown")
 		return err
@@ -216,6 +220,33 @@ func Run(cfg Config) error {
 
 	Log.Info().Msg("hub stopped")
 	return nil
+}
+
+// AikidoMiddleware returns a Gin middleware that checks whether the request
+// should be blocked by Aikido Zen (rate-limiting or user blocking).
+func AikidoMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		blockResult := zen.ShouldBlockRequest(c)
+
+		if blockResult != nil {
+			if blockResult.Type == "rate-limited" {
+				message := "You are rate limited by Zen."
+				if blockResult.Trigger == "ip" {
+					message += " (Your IP: " + *blockResult.IP + ")"
+				}
+				c.Header("Retry-After", strconv.Itoa(blockResult.RetryAfterSeconds))
+				c.String(http.StatusTooManyRequests, message)
+				c.Abort()
+				return
+			} else if blockResult.Type == "blocked" {
+				c.String(http.StatusForbidden, "You are blocked by Zen.")
+				c.Abort()
+				return
+			}
+		}
+
+		c.Next()
+	}
 }
 
 // recoverInterruptedState resets repositories, applications, and history events
