@@ -2,7 +2,9 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 
+	"github.com/AikidoSec/firewall-go/zen"
 	"github.com/OrcaCD/orca-cd/internal/hub/auth"
 	"github.com/gin-gonic/gin"
 )
@@ -32,6 +34,32 @@ func RequireAuth() gin.HandlerFunc {
 		}
 
 		auth.SetClaims(c, claims)
+		zen.SetUser(c, claims.Subject, claims.Name)
+		c.Next()
+	}
+}
+
+func AikidoMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		blockResult := zen.ShouldBlockRequest(c)
+
+		if blockResult != nil {
+			if blockResult.Type == "rate-limited" {
+				message := "You are rate limited by Zen."
+				if blockResult.Trigger == "ip" {
+					message += " (Your IP: " + *blockResult.IP + ")"
+				}
+				c.Header("Retry-After", strconv.Itoa(blockResult.RetryAfterSeconds))
+				c.String(http.StatusTooManyRequests, message)
+				c.Abort() // Stop further processing
+				return
+			} else if blockResult.Type == "blocked" {
+				c.String(http.StatusForbidden, "You are blocked by Zen.")
+				c.Abort() // Stop further processing
+				return
+			}
+		}
+
 		c.Next()
 	}
 }

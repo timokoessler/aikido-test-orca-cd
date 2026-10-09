@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AikidoSec/firewall-go/zen"
 	"github.com/OrcaCD/orca-cd/internal/hub/applicationevents"
 	"github.com/OrcaCD/orca-cd/internal/hub/applications"
 	"github.com/OrcaCD/orca-cd/internal/hub/auth"
@@ -165,6 +166,7 @@ func Run(cfg Config) error {
 	router.Use(middleware.IPLock(cfg.AllowedIPs))
 	router.Use(middleware.ValidateOrigin(cfg.AppURL))
 	router.Use(middleware.TimeoutMiddleware(30 * time.Second))
+	router.Use(middleware.AikidoMiddleware())
 
 	err = RegisterRoutes(router, cfg)
 	if err != nil {
@@ -213,6 +215,8 @@ func Run(cfg Config) error {
 		Log.Error().Err(err).Msg("forced shutdown")
 		return err
 	}
+
+	zen.Shutdown(ctx)
 
 	Log.Info().Msg("hub stopped")
 	return nil
