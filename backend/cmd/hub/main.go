@@ -7,6 +7,7 @@ import (
 	"os"
 	"slices"
 
+	"github.com/AikidoSec/firewall-go/zen"
 	"github.com/OrcaCD/orca-cd/internal/hub"
 	"github.com/OrcaCD/orca-cd/internal/shared/httpclient"
 	"github.com/OrcaCD/orca-cd/internal/version"
@@ -38,6 +39,9 @@ func newRootCmd() *cobra.Command {
 
 			cfg, err := hub.DefaultConfig()
 			if err != nil {
+				return err
+			}
+			if err := zen.Protect(); err != nil {
 				return err
 			}
 			return hub.Run(cfg)
