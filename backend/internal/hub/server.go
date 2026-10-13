@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AikidoSec/firewall-go/zen"
 	"github.com/OrcaCD/orca-cd/internal/hub/applicationevents"
 	"github.com/OrcaCD/orca-cd/internal/hub/applications"
 	"github.com/OrcaCD/orca-cd/internal/hub/auth"
@@ -163,6 +164,7 @@ func Run(cfg Config) error {
 	}
 	router.Use(middleware.SecurityHeaders())
 	router.Use(middleware.IPLock(cfg.AllowedIPs))
+	router.Use(AikidoMiddleware())
 	router.Use(middleware.ValidateOrigin(cfg.AppURL))
 	router.Use(middleware.TimeoutMiddleware(30 * time.Second))
 
@@ -214,8 +216,36 @@ func Run(cfg Config) error {
 		return err
 	}
 
+	zen.Shutdown(ctx)
+
 	Log.Info().Msg("hub stopped")
 	return nil
+}
+
+// AikidoMiddleware enables Zen's rate limiting and user/IP blocking.
+func AikidoMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		blockResult := zen.ShouldBlockRequest(c)
+
+		if blockResult != nil {
+			if blockResult.Type == "rate-limited" {
+				message := "You are rate limited by Zen."
+				if blockResult.Trigger == "ip" {
+					message += " (Your IP: " + *blockResult.IP + ")"
+				}
+				c.Header("Retry-After", strconv.Itoa(blockResult.RetryAfterSeconds))
+				c.String(http.StatusTooManyRequests, message)
+				c.Abort()
+				return
+			} else if blockResult.Type == "blocked" {
+				c.String(http.StatusForbidden, "You are blocked by Zen.")
+				c.Abort()
+				return
+			}
+		}
+
+		c.Next()
+	}
 }
 
 // recoverInterruptedState resets repositories, applications, and history events
