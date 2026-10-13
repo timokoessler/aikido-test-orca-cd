@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/AikidoSec/firewall-go/zen"
 	"github.com/OrcaCD/orca-cd/internal/hub/auth"
 	"github.com/gin-gonic/gin"
 )
@@ -32,6 +33,7 @@ func RequireAuth() gin.HandlerFunc {
 		}
 
 		auth.SetClaims(c, claims)
+		zen.SetUser(c, claims.Subject, claims.Name)
 		c.Next()
 	}
 }
